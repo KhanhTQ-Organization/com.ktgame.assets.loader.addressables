@@ -10,6 +10,8 @@
     "url": "https://github.com/KhanhTQ-hub"
   },
   "dependencies": {
-    "com.ktgame.unitask": "1.0.1"
+    "com.ktgame.unitask": "1.0.1",
+    "com.ktgame.assets.loader.core": "1.0.1",
+    "com.unity.addressables": "1.19.19"
   }
 }
