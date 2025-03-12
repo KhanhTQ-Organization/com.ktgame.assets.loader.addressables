@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/KhanhTQ-hub/com.ktgame.assets.loader.addressables/compare/v1.0.1...v1.0.2) (2025-03-12)
+
+
+### Bug Fixes
+
+* dependency ([561292b](https://github.com/KhanhTQ-hub/com.ktgame.assets.loader.addressables/commit/561292b3bd4ebdeee15f3be6a1ff640668bca8ea))
+
 ## [1.0.1](https://github.com/KhanhTQ-hub/com.ktgame.assets.loader.addressables/compare/v1.0.0...v1.0.1) (2025-03-11)
 
 
