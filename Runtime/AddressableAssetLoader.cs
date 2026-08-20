@@ -22,11 +22,21 @@ namespace com.ktgame.assets.loader.addressables
 			var request = new AssetRequest<TAsset>(requestId);
 			var setter = (IAssetRequest<TAsset>)request;
 			setter.SetProgressFunc(() => addressableHandle.PercentComplete);
-			setter.SetTask(UniTask.FromResult(addressableHandle.Result));
-			setter.SetResult(addressableHandle.Result);
-			var status = addressableHandle.Status == AsyncOperationStatus.Succeeded ? AssetRequestStatus.Succeeded : AssetRequestStatus.Failed;
-			setter.SetStatus(status);
-			setter.SetOperationException(addressableHandle.OperationException);
+			
+			if (addressableHandle.Status == AsyncOperationStatus.Succeeded)
+			{
+				setter.SetTask(UniTask.FromResult(addressableHandle.Result));
+				setter.SetResult(addressableHandle.Result);
+				setter.SetStatus(AssetRequestStatus.Succeeded);
+			}
+			else
+			{
+				setter.SetTask(UniTask.FromException<TAsset>(addressableHandle.OperationException ?? new Exception("Addressable load failed.")));
+				setter.SetResult(null);
+				setter.SetStatus(AssetRequestStatus.Failed);
+				setter.SetOperationException(addressableHandle.OperationException);
+			}
+			
 			return request;
 		}
 
@@ -43,12 +53,26 @@ namespace com.ktgame.assets.loader.addressables
 			var handle = new AssetRequest<TAsset>(requestId);
 			var setter = (IAssetRequest<TAsset>)handle;
 			var utcs = new UniTaskCompletionSource<TAsset>();
+			
 			addressableHandle.Completed += x =>
 			{
+				if (!_requestHandles.ContainsKey(requestId))
+				{
+					utcs.TrySetCanceled();
+					return;
+				}
+
+				if (x.Status == AsyncOperationStatus.Failed)
+				{
+					setter.SetStatus(AssetRequestStatus.Failed);
+					setter.SetOperationException(x.OperationException);
+					setter.SetResult(null);
+					utcs.TrySetException(x.OperationException ?? new Exception("Addressable load failed."));
+					return;
+				}
+
 				setter.SetResult(x.Result);
-				var status = x.Status == AsyncOperationStatus.Succeeded ? AssetRequestStatus.Succeeded : AssetRequestStatus.Failed;
-				setter.SetStatus(status);
-				setter.SetOperationException(addressableHandle.OperationException);
+				setter.SetStatus(AssetRequestStatus.Succeeded);
 				utcs.TrySetResult(x.Result);
 			};
 
@@ -64,12 +88,11 @@ namespace com.ktgame.assets.loader.addressables
 
 		public void Release(AssetRequest request)
 		{
-			if (!_requestHandles.ContainsKey(request.RequestId))
+			if (!_requestHandles.TryGetValue(request.RequestId, out var addressableHandle))
 			{
 				throw new InvalidOperationException($"There is no asset that has been requested for release (RequestId: {request.RequestId}).");
 			}
 
-			var addressableHandle = _requestHandles[request.RequestId];
 			_requestHandles.Remove(request.RequestId);
 			Addressables.Release(addressableHandle);
 		}
